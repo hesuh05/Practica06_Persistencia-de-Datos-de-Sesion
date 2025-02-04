@@ -1,0 +1,30 @@
+{
+  "name": "practica06_persistencia-de-datos-de-sesion",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hesuh05/Practica06_Persistencia-de-Datos-de-Sesion.git"
+  },
+  "keywords": [],
+  "author": "Jesús Domínguez Ramírez",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/hesuh05/Practica06_Persistencia-de-Datos-de-Sesion/issues"
+  },
+  "homepage": "https://github.com/hesuh05/Practica06_Persistencia-de-Datos-de-Sesion#readme",
+  "description": "Implementación de la persistencia de los datos de sesión en una base de datos usando MongoDB y MongoAtlas, adecuando algunso cambios necesarios.",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "moment-timezone": "^0.5.47",
+    "mongoose": "^8.9.6",
+    "nodemon": "^3.1.9",
+    "uuid": "^11.0.5"
+  }
+}
