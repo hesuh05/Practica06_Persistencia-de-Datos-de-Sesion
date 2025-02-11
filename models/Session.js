@@ -38,6 +38,11 @@ const sessionSchema = new Schema({
       hours: { type: Number, default: 0, required: true, min: 0 },
       minutes: { type: Number, default: 0, required: true, min: 0, max: 59 },
       seconds: { type: Number, default: 0, required: true, min: 0, max: 59 }
+    },
+    durationTime: {
+      hours: { type: Number, default: 0, required: true, min: 0 },
+      minutes: { type: Number, default: 0, required: true, min: 0, max: 59 },
+      seconds: { type: Number, default: 0, required: true, min: 0, max: 59 }
     }
   },{
     versionKey:false,

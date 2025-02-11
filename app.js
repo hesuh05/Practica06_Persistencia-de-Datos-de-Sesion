@@ -31,6 +31,15 @@ app.use(session({
 // Sesiones almacenadas en Memoria (RAM)
 const sessions = {}
 //Funcion que permite acceder a la información de la interfaz de red en este caso LAN
+/*const getTestIp = (req) => {
+    let ip = {
+        one: req.header("x-forwarded-for"),
+        two: req.connection.remoteAddress,
+        three: req.socket.remoteAddress,
+        four: req.connection.socket?.remoteAddress
+    }
+    return ip;
+};*/
 const getClientIp = (req) => {
     let ip = req.header("x-forwarded-for") || req.connection.remoteAddress || req.socket.remoteAddress || req.connection.socket?.remoteAddress;
 
@@ -73,8 +82,10 @@ const getServerMacAddress = () => {
     const networkInterfaces = os.networkInterfaces();
     for (let interfaceName in networkInterfaces) {
         const interfaceInfo = networkInterfaces[interfaceName];
+        console.log(interfaceInfo)
         for (let i = 0; i < interfaceInfo.length; i++) {
             const address = interfaceInfo[i];
+            console.log(address)
             if (address.family === 'IPv4' && !address.internal) {
                 return address.mac;  // Retorna la dirección MAC de la interfaz de red
             }
@@ -101,13 +112,19 @@ const auth = async (req, res, next) => {
         // Calcular inactividad
         const ahora = moment();
         const ultimoAcceso = moment(session.lastAccess);
+        const creacion = moment(session.createdAt);
         const diferencia = ahora.diff(ultimoAcceso, "seconds");
-
+        const duracion = ahora.diff(creacion, "seconds")
         // Actualizar tiempo de inactividad en la DB
         session.inactivityTime = {
             hours: Math.floor(diferencia / 3600),
             minutes: Math.floor((diferencia % 3600) / 60),
             seconds: diferencia % 60,
+        };
+        session.durationTime = {
+            hours: Math.floor(duracion / 3600),
+            minutes: Math.floor((duracion % 3600) / 60),
+            seconds: duracion % 60,
         };
         await session.save();
 
@@ -132,16 +149,21 @@ app.get('/',(req,res)=>{
 // Login endpoint
 app.post("/login", async (req, res) => {
     const { email, nickname, macAddress } = req.body;
-    
+    let ipclient = getClientIp(req);
+    console.log(ipclient);
+    // console.log(os.networkInterfaces());
+    if (ipclient.startsWith('::')){
+        ipclient = getLocalIp();
+        console.log(ipclient)
+    }
     try {
         const serverMac = getServerMacAddress();
         const serverIp = getLocalIp();
-
         const newSession = await Session.create({
             email,
             nickname,
             clientData: {
-                ip: getClientIp(req),
+                ip: ipclient,
                 macAddress
             },
             serverData: {
@@ -150,6 +172,7 @@ app.post("/login", async (req, res) => {
             },
             status: "Activa",
             inactivityTime: { hours: 0, minutes: 0, seconds: 0 }, // Inicializar a 0
+            durationTime:{ hours: 0, minutes: 0, seconds: 0},
             createdAt: moment().tz("America/Mexico_City").toDate(), // <-- Fecha en CDMX
             lastAccess: moment().tz("America/Mexico_City").toDate() // <-- Fecha en CDMX
         });
@@ -219,7 +242,7 @@ app.post("/logout", async (req, res) => {
     //Estatus
    app.get("/status", auth, async (req, res) => {
     const { sessionId } = req.query;
-
+    console.log(os.networkInterfaces())
     try {
         const session = await Session.findOne({ sessionID: sessionId });
         
@@ -253,7 +276,9 @@ app.post("/logout", async (req, res) => {
             // Actualizar inactividad y cerrar sesiones expiradas
             for (const session of allSessions) {
                 const ultimoAcceso = moment(session.lastAccess);
+                const creacion = moment(session.createdAt)
                 const diferencia = ahora.diff(ultimoAcceso, "seconds");
+                const duracion = ahora.diff(creacion, "seconds");
     
                 // Actualizar inactividad
                 session.inactivityTime = {
@@ -261,6 +286,11 @@ app.post("/logout", async (req, res) => {
                     minutes: Math.floor((diferencia % 3600) / 60),
                     seconds: diferencia % 60,
                 };
+                session.durationTime = {
+                    hours: Math.floor(duracion/3600),
+                    minutes: Math.floor((duracion % 3600) / 60),
+                    seconds: duracion % 60
+                }
     
                 // Cerrar sesiones inactivas > 2 minutos
                 if (diferencia >= 120 && session.status === "Activa") {
@@ -301,7 +331,9 @@ app.post("/logout", async (req, res) => {
             // Actualizar inactividad en tiempo real
             for (const session of activeSessions) {
                 const ultimoAcceso = moment(session.lastAccess);
+                const creacion = moment(session.createdAt);
                 const diferencia = ahora.diff(ultimoAcceso, "seconds");
+                const duracion = ahora.diff(creacion, "seconds");
     
                 // Actualizar inactividad
                 session.inactivityTime = {
@@ -309,6 +341,15 @@ app.post("/logout", async (req, res) => {
                     minutes: Math.floor((diferencia % 3600) / 60),
                     seconds: diferencia % 60,
                 };
+                session.durationTime = {
+                    hours: Math.floor(duracion / 3600),
+                    minutes: Math.floor((duracion %  3600) / 60),
+                    seconds: duracion % 60
+                }
+                // Cerrar sesiones inactivas > 2 minutos
+                if (diferencia >= 120 && session.status === "Activa") {
+                    session.status = "Finalizada por Error del Sistema";
+                }
                 await session.save();
             }
     
