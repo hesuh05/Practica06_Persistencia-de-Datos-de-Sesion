@@ -164,63 +164,58 @@ app.post("/login", async (req, res) => {
     }
 });
     //Logout endpoint
-    app.post("/logout", async (req, res) => {
-        const { sessionId } = req.body;
-      
-        try {
-          const session = await Session.findOneAndUpdate(
+app.post("/logout", async (req, res) => {
+    const { sessionId } = req.body;
+    try {
+        const session = await Session.findOneAndUpdate(
             { sessionID: sessionId },
-            { 
-              $set: { 
-                status: "Finalizada por el Usuario",
-                lastAccess: moment().tz("America/Mexico_City").toDate()
-              } 
+            {
+                $set: {
+                    status: "Finalizada por el Usuario",
+                    lastAccess: moment().tz("America/Mexico_City").toDate(),
+                },
             },
             { new: true }
-          );
-      
-          if (!session) {
-            return res.status(404).json({ message: "Sesión no encontrada" });
-          }
-      
-          res.status(200).json({ message: "Sesión finalizada exitosamente" });
-      
-        } catch (error) {
-          res.status(500).json({ message: "Error al cerrar sesión", error: error.message });
-        }
-      });
-    //Actualización de la Sesión
-    app.put("/update", auth, async (req, res) => {
-        const { sessionId, email, nickname } = req.body;
-    
-        try {
-            const updatedSession = await Session.findOneAndUpdate(
-                { sessionID: sessionId },
-                {
-                    $set: {
-                        email,
-                        nickname,
-                        lastAccess: moment().tz("America/Mexico_City").toDate(), // Actualizar lastAccess
-                        inactivityTime: { hours: 0, minutes: 0, seconds: 0 } // Reiniciar inactividad
-                    }
-                },
-                { new: true }
-            );
-    
-            if (!updatedSession) {
-                return res.status(404).json({ message: "Sesión no encontrada" });
-            }
-    
-            res.status(200).json({
-                message: "Sesión actualizada",
-                session: updatedSession
-            });
-    
-        } catch (error) {
-            res.status(500).json({ message: "Error al actualizar sesión", error: error.message });
-        }
-    });
+        );
 
+        if (!session) {
+            return res.status(404).json({ message: "Sesión no encontrada" });
+        }
+
+        res.status(200).json({ message: "Sesión finalizada exitosamente" });
+    } catch (error) {
+        res.status(500).json({ message: "Error al cerrar sesión", error: error.message });
+    }
+});
+    //Actualización de la Sesión
+   app.put("/update", auth, async (req, res) => {
+    const { sessionId, email, nickname } = req.body;
+    try {
+        const updatedSession = await Session.findOneAndUpdate(
+            { sessionID: sessionId },
+            {
+                $set: {
+                    email,
+                    nickname,
+                    lastAccess: moment().tz("America/Mexico_City").toDate(),
+                    inactivityTime: { hours: 0, minutes: 0, seconds: 0 },
+                },
+            },
+            { new: true }
+        );
+
+        if (!updatedSession) {
+            return res.status(404).json({ message: "Sesión no encontrada" });
+        }
+
+        res.status(200).json({
+            message: "Sesión actualizada",
+            session: updatedSession,
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Error al actualizar sesión", error: error.message });
+    }
+});
     //Estatus
    app.get("/status", auth, async (req, res) => {
     const { sessionId } = req.query;
@@ -288,7 +283,7 @@ app.post("/login", async (req, res) => {
             });
     
             res.status(200).json({
-                message: "Todas las sesiones",
+                message: "Todas las sesiones: "+formattedSessions.length,
                 sessions: formattedSessions,
             });
     
@@ -321,11 +316,19 @@ app.post("/login", async (req, res) => {
             const currentActiveSessions = await Session.find({ status: "Activa" });
             
             res.status(200).json({
-                count: currentActiveSessions.length,
+                message:"Todas las sesiones actuales: "+currentActiveSessions.length,
                 sessions: currentActiveSessions,
             });
     
         } catch (error) {
             res.status(500).json({ message: "Error al obtener sesiones", error: error.message });
+        }
+    });
+    app.delete("/deleteAll", async (req, res) => {
+        try {
+            await Session.deleteMany({});
+            res.status(200).json({ message: "Todos los documentos eliminados exitosamente" });
+        } catch (error) {
+            res.status(500).json({ message: "Error al eliminar documentos", error: error.message });
         }
     });
