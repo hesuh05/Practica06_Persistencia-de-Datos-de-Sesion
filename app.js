@@ -116,16 +116,18 @@ const auth = async (req, res, next) => {
         const diferencia = ahora.diff(ultimoAcceso, "seconds");
         const duracion = ahora.diff(creacion, "seconds")
         // Actualizar tiempo de inactividad en la DB
-        session.inactivityTime = {
-            hours: Math.floor(diferencia / 3600),
-            minutes: Math.floor((diferencia % 3600) / 60),
-            seconds: diferencia % 60,
-        };
-        session.durationTime = {
-            hours: Math.floor(duracion / 3600),
-            minutes: Math.floor((duracion % 3600) / 60),
-            seconds: duracion % 60,
-        };
+        if (session.status!='Inactiva'){
+            session.inactivityTime = {
+                hours: Math.floor(diferencia / 3600),
+                minutes: Math.floor((diferencia % 3600) / 60),
+                seconds: diferencia % 60,
+            };
+            session.durationTime = {
+                hours: Math.floor(duracion / 3600),
+                minutes: Math.floor((duracion % 3600) / 60),
+                seconds: duracion % 60,
+            };
+        }
         await session.save();
 
         // Verificar si supera 2 minutos (120 segundos)
@@ -281,17 +283,18 @@ app.post("/logout", async (req, res) => {
                 const duracion = ahora.diff(creacion, "seconds");
     
                 // Actualizar inactividad
-                session.inactivityTime = {
-                    hours: Math.floor(diferencia / 3600),
-                    minutes: Math.floor((diferencia % 3600) / 60),
-                    seconds: diferencia % 60,
-                };
-                session.durationTime = {
-                    hours: Math.floor(duracion/3600),
-                    minutes: Math.floor((duracion % 3600) / 60),
-                    seconds: duracion % 60
+                if (session.status!='Finalizada por el Usuario'){
+                    session.inactivityTime = {
+                        hours: Math.floor(diferencia / 3600),
+                        minutes: Math.floor((diferencia % 3600) / 60),
+                        seconds: diferencia % 60,
+                    };
+                    session.durationTime = {
+                        hours: Math.floor(duracion/3600),
+                        minutes: Math.floor((duracion % 3600) / 60),
+                        seconds: duracion % 60
+                    }
                 }
-    
                 // Cerrar sesiones inactivas > 2 minutos
                 if (diferencia >= 120 && session.status === "Activa") {
                     session.status = "Finalizada por Error del Sistema";
@@ -336,15 +339,17 @@ app.post("/logout", async (req, res) => {
                 const duracion = ahora.diff(creacion, "seconds");
     
                 // Actualizar inactividad
-                session.inactivityTime = {
-                    hours: Math.floor(diferencia / 3600),
-                    minutes: Math.floor((diferencia % 3600) / 60),
-                    seconds: diferencia % 60,
-                };
-                session.durationTime = {
-                    hours: Math.floor(duracion / 3600),
-                    minutes: Math.floor((duracion %  3600) / 60),
-                    seconds: duracion % 60
+                if (session.status!='Inactiva'){
+                    session.inactivityTime = {
+                        hours: Math.floor(diferencia / 3600),
+                        minutes: Math.floor((diferencia % 3600) / 60),
+                        seconds: diferencia % 60,
+                    };
+                    session.durationTime = {
+                        hours: Math.floor(duracion / 3600),
+                        minutes: Math.floor((duracion %  3600) / 60),
+                        seconds: duracion % 60
+                    }
                 }
                 // Cerrar sesiones inactivas > 2 minutos
                 if (diferencia >= 120 && session.status === "Activa") {
